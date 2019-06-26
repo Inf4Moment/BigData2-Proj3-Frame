@@ -9,9 +9,9 @@ tariff_pattern_1 = re.compile(r"进口税: 预计(?P<tariff>[0-9]+.[0-9]+)元")
 tariff_pattern_2 = re.compile(r"进口税: 预计(?P<tariff_low>[0-9]+.[0-9]+) - (?P<tariff_high>[0-9]+.[0-9]+)元")
 tariff_pattern_3 = re.compile(r"进口税: (?P<percent>[0-9]+.[0-9]+)% 如需征收买家承担")
 
-files = os.listdir(r"../data")
+files = os.listdir(r"./data")
 for file_name in files:
-    file_path = r"../data/" + file_name
+    file_path = r"./data/" + file_name
     with open(file_path, "r", encoding = "utf-8") as load_f:
         load_data = json.load(load_f)
     
@@ -71,6 +71,6 @@ for file_name in files:
     })
 
     shop_id = load_data["shopUserId"]
-    output_path = r"../csv/" + shop_id + ".csv"
+    output_path = r"./csv/" + shop_id + ".csv"
     sales_data.to_csv(output_path, index = False, encoding = "utf-8")
     print(shop_id)

@@ -1,6 +1,7 @@
 # data file
 csv/
 data/
+*.csv
 
 # class file
 *.class

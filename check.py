@@ -5,11 +5,11 @@ import json
 import os
 import re
 
-files = os.listdir(r"../data")
-save_f = open("../check.csv", "w", encoding = "utf-8")
+files = os.listdir(r"./data")
+save_f = open("./check.csv", "w", encoding = "utf-8")
 
 for file_name in files:
-    file_path = r"../data/" + file_name
+    file_path = r"./data/" + file_name
     with open(file_path, "r", encoding = "utf-8") as load_f:
         load_data = json.load(load_f)
     
