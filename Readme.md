@@ -9,7 +9,10 @@
     + 链接 url
     + 图片 imgs
     + 名称 name
+    + 单价 price
+    + 价格货币类型 priceSymbol
     + 邮资 postage
+    + 进口税 tariff
     + 销量 sales
     + 描述 desc
         + 副标题 subtitle
@@ -20,6 +23,7 @@
             + 自定义
             + 商品图片
             + 商品信息
+            + 。。。
     + 评论数量 reviewCount
     + 评论标签 reviewTags
     + 前N条评论 firstNReviews
@@ -31,5 +35,3 @@
         + 购买类型 sku
         + 图片 pics
         + 追评 add
-
-
