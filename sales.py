@@ -14,7 +14,6 @@ for file_name in files:
     item_num = len(items)
     item_name = [""] * item_num
     item_price = [0.0] * item_num
-    item_priceSymbol = [""] * item_num
     item_postage = [0.0] * item_num
     item_sales = [0] * item_num
 
@@ -24,15 +23,13 @@ for file_name in files:
             item_name[i] = items[i]["name"]
         # 商品价格
         if "price" in items[i]:
-            item_price[i] = items[i]["price"]
-        # 商品价格单位
-        if "priceSymbol" in items[i]:
-            item_priceSymbol[i] = items[i]["priceSymbol"]
+            if items[i]["price"] is not None:
+                item_price[i] = items[i]["price"]
         # 商品邮费
         if "postage" in items[i]:
-            if r"包" in items[i]["postage"]:
+            if r"包" in items[i]["postage"]:            # 包邮
                 item_postage[i] = 0.0
-            elif items[i]["postage"] == r"上门安装":
+            elif items[i]["postage"] == r"上门安装":    # 上门安装
                 item_postage[i] = 0.0
             else:
                 item_postage[i] = float(items[i]["postage"][4:])
@@ -43,7 +40,6 @@ for file_name in files:
     sales_data = DataFrame({
         "name": item_name,
         "price": item_price,
-        "priceSymbol": item_priceSymbol,
         "postage": item_postage,
         "sales": item_sales
     })
