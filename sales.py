@@ -2,7 +2,12 @@
 
 import json
 import os
+import re
 from pandas import DataFrame
+
+tariff_pattern_1 = re.compile(r"进口税: 预计(?P<tariff>[0-9]+.[0-9]+)元")
+tariff_pattern_2 = re.compile(r"进口税: 预计(?P<tariff_low>[0-9]+.[0-9]+) - (?P<tariff_high>[0-9]+.[0-9]+)元")
+tariff_pattern_3 = re.compile(r"进口税: (?P<percent>[0-9]+.[0-9]+)% 如需征收买家承担")
 
 files = os.listdir(r"../data")
 for file_name in files:
@@ -16,6 +21,7 @@ for file_name in files:
     item_price = [0.0] * item_num
     item_postage = [0.0] * item_num
     item_sales = [0] * item_num
+    item_tariff = [0.0] * item_num
 
     for i in range(0, item_num):
         # 商品名称
@@ -31,20 +37,40 @@ for file_name in files:
                 item_postage[i] = 0.0
             elif items[i]["postage"] == r"上门安装":    # 上门安装
                 item_postage[i] = 0.0
-            else:
+            else:                                       # 邮费: xx.xx
                 item_postage[i] = float(items[i]["postage"][4:])
         # 商品销量
         if "sales" in items[i]:
+            # 月销量 xxxx件
             item_sales[i] = int(items[i]["sales"][4:-1])
+        # 商品进口税
+        if "tariff" in items[i]:
+            # 进口税: 预计xx.xx元
+            obj = tariff_pattern_1.search(items[i]["tariff"])
+            if obj:
+                item_tariff[i] = float(obj.group("tariff"))
+            # 进口税: 预计xx.xx - xx.xx元
+            obj = tariff_pattern_2.search(items[i]["tariff"])
+            if obj:
+                item_tariff[i] = (float(obj.group("tariff_low")) + float(obj.group("tariff_high"))) / 2
+            # 进口税: xx% 如需征收买家承担
+            obj = tariff_pattern_3.search(items[i]["tariff"])
+            if obj and item_price[i] > 0:   # 价格不为空
+                item_tariff[i] = item_price[i] * float(obj.group("percent")) / 100
+            # 其余情形全部默认为 0
+            # + 进口税: 买家自行承担
+            # + 商家包税
+            # + 商家承担
 
     sales_data = DataFrame({
         "name": item_name,
         "price": item_price,
         "postage": item_postage,
-        "sales": item_sales
+        "sales": item_sales,
+        "tariff": item_tariff
     })
 
     shop_id = load_data["shopUserId"]
     output_path = r"../csv/" + shop_id + ".csv"
-    sales_data.to_csv(output_path, index = False)
+    sales_data.to_csv(output_path, index = False, encoding = "utf-8")
     print(shop_id)

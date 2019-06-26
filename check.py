@@ -1,7 +1,6 @@
 # -*- coding:utf8 -*-
 
 # 检查文件内容
-
 import json
 import os
 import re
@@ -20,6 +19,7 @@ for file_name in files:
     item_priceSymbol = [""] * item_num
     item_postage = [""] * item_num
     item_sales = [""] * item_num
+    item_tariff = [""] * item_num
 
     for i in range(0, item_num):
         # 商品价格
@@ -42,6 +42,12 @@ for file_name in files:
             search_obj = re.match(r"月销量 [0-9]+件", items[i]["sales"])
             if not search_obj:
                 item_sales[i] = items[i]["sales"]
+        # 商品进口税
+        if "tariff" in items[i]:
+            search_obj1 = re.match(r"进口税: 预计[0-9]+.[0-9]+元", items[i]["tariff"])
+            search_obj2 = re.match(r"进口税: 预计[0-9]+.[0-9]+ - [0-9]+.[0-9]+元", items[i]["tariff"])
+            if not search_obj1 and not search_obj2 and not "包税" in items[i]["tariff"] and not "商家承担" in items[i]["tariff"]:
+                item_tariff[i] = items[i]["tariff"]
 
     save_f.write("/".join(set(item_price)))
     save_f.write(",")
@@ -50,6 +56,8 @@ for file_name in files:
     save_f.write("/".join(set(item_sales)))
     save_f.write(",")
     save_f.write("/".join(set(item_priceSymbol)))
+    save_f.write(",")
+    save_f.write("/".join(set(item_tariff)))
     save_f.write("\n")
 
 save_f.close()
