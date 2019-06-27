@@ -81,7 +81,7 @@ for k in range(0, file_num):
         neg_max_index = review_data["neg_rate"].argmax()     # 差评率最高商品
         if review_data["neg_rate"][neg_max_index] > neg_max_item["rate"]:
             neg_max_item["rate"] = review_data["neg_rate"][neg_max_index]
-            neg_max_item["item"] = shop_id[k]
+            neg_max_item["item"] = review_data["name"][neg_max_index]
             pos_max_item["shop_id"] = shop_id[k]
             pos_max_item["shop_name"] = shop_name[k]
         
