@@ -71,6 +71,6 @@ for file_name in files:
     })
 
     shop_id = load_data["shopUserId"]
-    output_path = r"./csv/" + shop_id + ".csv"
+    output_path = r"./res/sales_info/" + shop_id + ".csv"
     sales_data.to_csv(output_path, index = False, encoding = "utf-8")
     print(shop_id)

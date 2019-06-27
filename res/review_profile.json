@@ -1,0 +1,21 @@
+{
+    "item_max_pos_review_rate": {
+        "rate": 1.0,
+        "item": "中年男长袖t恤男装中老年保暖衣服爸爸装毛衣加绒加厚40-50岁冬装",
+        "shop_id": "1016228978",
+        "shop_name": "威尔豪斯顿旗舰店"
+    },
+    "item_max_neg_review_rate": {
+        "rate": 1.0,
+        "item": "1016228978",
+        "shop": "威尔豪斯顿旗舰店"
+    },
+    "shop_max_pos_review_rate": {
+        "rate": 1.0,
+        "name": "kabrita海外旗舰店"
+    },
+    "shop_max_neg_review_rate": {
+        "rate": 0.5384615384615384,
+        "name": "DJL海外专营店"
+    }
+}

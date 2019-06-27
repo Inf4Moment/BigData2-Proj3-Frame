@@ -6,7 +6,7 @@ import os
 import re
 
 files = os.listdir(r"./data")
-save_f = open("./check.csv", "w", encoding = "utf-8")
+save_f = open(r"./check.csv", "w", encoding = "utf-8")
 
 for file_name in files:
     file_path = r"./data/" + file_name

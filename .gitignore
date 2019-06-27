@@ -1,6 +1,7 @@
 # data file
-csv/
 data/
+res/sales_info/
+res/item_rate/
 *.csv
 
 # class file
