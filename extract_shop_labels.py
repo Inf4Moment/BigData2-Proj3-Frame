@@ -37,13 +37,13 @@ for file_name in files:
         if 'reviewTags' in item:
             for tag in item['reviewTags']:
                 shop_info += tag + '\n'
-        if 'firstNReviews' in item:
-            for review in item['firstNReviews']:
-                if 'add' in review:
-                    shop_info += '\n'.join(review['add'].split('\n')[1:]) + '\n'
-                if 'content' in review:
-                    if review['content'] != '此用户没有填写评论!':
-                        shop_info += review['content'] + '\n'
+        # if 'firstNReviews' in item:
+        #     for review in item['firstNReviews']:
+        #         if 'add' in review:
+        #             shop_info += '\n'.join(review['add'].split('\n')[1:]) + '\n'
+        #         if 'content' in review:
+        #             if review['content'] != '此用户没有填写评论!':
+        #                 shop_info += review['content'] + '\n'
 
     output_path = r"../text/" + shop_id + ".txt"
     out = open(output_path, 'w', encoding='utf-8')
