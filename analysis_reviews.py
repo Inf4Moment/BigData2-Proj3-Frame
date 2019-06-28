@@ -82,8 +82,8 @@ for k in range(0, file_num):
         if review_data["neg_rate"][neg_max_index] > neg_max_item["rate"]:
             neg_max_item["rate"] = review_data["neg_rate"][neg_max_index]
             neg_max_item["item"] = review_data["name"][neg_max_index]
-            pos_max_item["shop_id"] = shop_id[k]
-            pos_max_item["shop_name"] = shop_name[k]
+            neg_max_item["shop_id"] = shop_id[k]
+            neg_max_item["shop_name"] = shop_name[k]
         
         shop_review_num = review_data["total_num"].sum()
         if shop_review_num > 0:
