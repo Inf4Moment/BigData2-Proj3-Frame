@@ -10,10 +10,22 @@ tariff_pattern_2 = re.compile(r"进口税: 预计(?P<tariff_low>[0-9]+.[0-9]+) -
 tariff_pattern_3 = re.compile(r"进口税: (?P<percent>[0-9]+.[0-9]+)% 如需征收买家承担")
 
 files = os.listdir(r"./data")
+file_num = len(files)
+sales_info = []
+
 for file_name in files:
     file_path = r"./data/" + file_name
     with open(file_path, "r", encoding = "utf-8") as load_f:
         load_data = json.load(load_f)
+    
+    shop_sale_info = {}
+    shop_sale_info["id"] = ""
+    shop_sale_info["name"] = ""
+    shop_sale_info["sale"] = 0.0
+    if "shopUserId" in load_data:
+        shop_sale_info["id"] = load_data["shopUserId"]
+    if "shopName" in load_data:    
+        shop_sale_info["name"] = load_data["shopName"]
     
     items = load_data["items"]
     item_num = len(items)
@@ -22,7 +34,7 @@ for file_name in files:
     item_postage = [0.0] * item_num
     item_sales = [0] * item_num
     item_tariff = [0.0] * item_num
-
+    
     for i in range(0, item_num):
         # 商品名称
         if "name" in items[i]:
@@ -61,7 +73,12 @@ for file_name in files:
             # + 进口税: 买家自行承担
             # + 商家包税
             # + 商家承担
+        # 统计销售额
+        shop_sale_info["sale"] += item_sales[i] * (item_price[i] + item_postage[i] + item_tariff[i])
+    sales_info.append(shop_sale_info)
+    print(shop_sale_info["id"])
 
+    '''
     sales_data = DataFrame({
         "name": item_name,
         "price": item_price,
@@ -69,8 +86,10 @@ for file_name in files:
         "sales": item_sales,
         "tariff": item_tariff
     })
-
-    shop_id = load_data["shopUserId"]
-    output_path = r"./res/sales_info/" + shop_id + ".csv"
+    output_path = r"./res/sales_info/" + sales_info[k]["id"] + ".csv"
     sales_data.to_csv(output_path, index = False, encoding = "utf-8")
-    print(shop_id)
+    '''
+
+sales_json = open(r"./res/shop_sale.json", "w", encoding = "utf-8")
+json.dump(sales_info, sales_json, indent = 4, ensure_ascii = False)
+sales_json.close()
