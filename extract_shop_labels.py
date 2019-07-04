@@ -2,6 +2,10 @@
 
 import json
 import os
+import re
+
+attr_jump = re.compile(r'商品信息|材质|成分|弹力|年份季节|吊牌图|销售|厚薄|款式|版型|工艺处理|查看更多|风格|适用|面料|服饰工艺|安全等级|品牌|产地|净含量|产品|包装方式|条形码|形状|功效|保质期|生产企业|计价单位|口味|气味|规格|功能|量贩装|种类|闭合方式|货号|鞋帮高度')
+sub_jump = re.compile(r'优惠|购物')
 
 files = os.listdir(r"../data")
 for file_name in files:
@@ -12,7 +16,7 @@ for file_name in files:
     shop_id = load_data["shopUserId"]
     print('Extracting\t' + shop_id + '...')
 
-    shop_info = ""
+    shop_info = ''
     if 'shopName' in load_data:
         shop_info += load_data['shopName'] + '\n'
     items = load_data["items"]
@@ -20,11 +24,14 @@ for file_name in files:
     for item in items:
         # 商品名称
         if 'name' in item:
+            shop_info += '-------' + '\n'
             shop_info += item['name'] + '\n'
         if 'desc' in item:
             desc = item['desc']
-            if 'subtitle' in desc and desc['subtitle'] != '\"—\"':
+            if 'subtitle' in desc and desc['subtitle'] != '\"—\"' \
+                    and sub_jump.search(desc['subtitle']) is None:
                 shop_info += desc['subtitle'] + '\n'
+            shop_info += '+++++++' + '\n'
             for module in desc['modules']:
                 if module['title'] == '商品信息':
                     texts = module['texts']
@@ -33,7 +40,9 @@ for file_name in files:
                     if len(texts) != 0 and texts[-1] == '查看更多':
                         texts.pop()
                     for text in texts:
-                        shop_info += text + '\n'
+                        if attr_jump.search(text) is None:
+                            shop_info += text + '\n'
+        shop_info += '=======' + '\n'
         if 'reviewTags' in item:
             for tag in item['reviewTags']:
                 shop_info += tag + '\n'
