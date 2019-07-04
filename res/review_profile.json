@@ -1,14 +1,15 @@
 {
     "item_max_pos_review_rate": {
         "rate": 1.0,
-        "item": "中年男长袖t恤男装中老年保暖衣服爸爸装毛衣加绒加厚40-50岁冬装",
-        "shop_id": "1016228978",
-        "shop_name": "威尔豪斯顿旗舰店"
+        "item": "秋季纯棉男裤NIAN JEEP商务休闲裤男士厚款西裤宽松直筒长裤子潮",
+        "shop_id": "2103359059",
+        "shop_name": "能天服饰专营店"
     },
     "item_max_neg_review_rate": {
         "rate": 1.0,
-        "item": "1016228978",
-        "shop": "威尔豪斯顿旗舰店"
+        "item": "2017冬季男士加内胆冲锋夹克衫男NIAN JEEP多袋工装纯色两件套潮",
+        "shop_id": "2103359059",
+        "shop_name": "能天服饰专营店"
     },
     "shop_max_pos_review_rate": {
         "rate": 1.0,
