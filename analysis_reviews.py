@@ -6,11 +6,24 @@ import re
 import pandas
 from snownlp import SnowNLP
 
-# 统计各商店好评率、差评率
-pos_max_item = {"rate": -1.0}   # 好评率最高的商品
-neg_max_item = {"rate": -1.0}   # 差评率最高的商品
-pos_max_shop = {"rate": -1.0}   # 好评率最高的商店
-neg_max_shop = {"rate": -1.0}   # 差评率最高的商店
+N = 5
+
+pos_max_item = pandas.DataFrame({       # 好评率最高的商品
+    "name": [],
+    "total_num": [],
+    "pos_num": [],
+    "neg_num": [],
+    "pos_rate": [],
+    "neg_rate": []
+})
+neg_max_item = pandas.DataFrame({       # 差评率最高的商品
+    "name": [],
+    "total_num": [],
+    "pos_num": [],
+    "neg_num": [],
+    "pos_rate": [],
+    "neg_rate": []
+})
 
 files = os.listdir(r"./data")
 file_num = len(files)
@@ -19,7 +32,7 @@ shop_id = [""] * file_num           # 商店 ID
 shop_pos_rate = [-1.0] * file_num   # 商店好评率
 shop_neg_rate = [-1.0] * file_num   # 商店差评率
 
-for k in range(0, file_num):
+for k in range(0, 20):
     file_path = r"./data/" + files[k]
     with open(file_path, "r", encoding = "utf-8") as load_f:
         load_data = json.load(load_f)
@@ -57,40 +70,30 @@ for k in range(0, file_num):
             item_pos_rate[i] = item_pos_num[i] / item_review_num[i]
             item_neg_rate[i] = item_neg_num[i] / item_review_num[i]
         
-        # 将商店中商品的评论信息保存到文件中
-        review_data = pandas.DataFrame({
-            "name": item_name,
-            "total_num": item_review_num,
-            "pos_num": item_pos_num,
-            "neg_num": item_neg_num,
-            "pos_rate": item_pos_rate,
-            "neg_rate": item_neg_rate
-        })
+    # 将商店中商品的评论信息保存到文件中
+    review_data = pandas.DataFrame({
+        "name": item_name,
+        "total_num": item_review_num,
+        "pos_num": item_pos_num,
+        "neg_num": item_neg_num,
+        "pos_rate": item_pos_rate,
+        "neg_rate": item_neg_rate
+    })
 
-        '''
-        output_path = r"./res/item_rate/" + shop_id[k] + ".csv"
-        review_data.to_csv(output_path, index = False, encoding = "utf-8")
-        '''
+    pos_topN_item = review_data.nlargest(max(N, item_num), "pos_rate")
+    pos_max_item = pandas.concat([pos_max_item, pos_topN_item])
+    neg_topN_item = review_data.nlargest(max(N, item_num), "neg_rate")
+    neg_max_item = pandas.concat([neg_max_item, neg_topN_item])
+    # 
+    shop_review_num = review_data["total_num"].sum()
+    if shop_review_num > 0:
+        shop_pos_rate[k] = review_data["pos_num"].sum() / shop_review_num   # 商品好评率
+        shop_neg_rate[k] = review_data["neg_num"].sum() / shop_review_num   # 商品差评率
+    # 
+    print(k)
 
-        pos_max_index = review_data["pos_rate"].argmax()     # 好评率最高商品
-        if review_data["pos_rate"][pos_max_index] > pos_max_item["rate"]:
-            pos_max_item["rate"] = review_data["pos_rate"][pos_max_index]
-            pos_max_item["item"] = review_data["name"][pos_max_index]
-            pos_max_item["shop_id"] = shop_id[k]
-            pos_max_item["shop_name"] = shop_name[k]
-        neg_max_index = review_data["neg_rate"].argmax()     # 差评率最高商品
-        if review_data["neg_rate"][neg_max_index] > neg_max_item["rate"]:
-            neg_max_item["rate"] = review_data["neg_rate"][neg_max_index]
-            neg_max_item["item"] = review_data["name"][neg_max_index]
-            neg_max_item["shop_id"] = shop_id[k]
-            neg_max_item["shop_name"] = shop_name[k]
-        
-        shop_review_num = review_data["total_num"].sum()
-        if shop_review_num > 0:
-            shop_pos_rate[k] = review_data["pos_num"].sum() / shop_review_num   # 商品好评率
-            shop_neg_rate[k] = review_data["neg_num"].sum() / shop_review_num   # 商品差评率
-
-    print(shop_id[k])
+pos_topN_item = pos_topN_item.nlargest(N, "pos_rate")
+neg_topN_item = neg_topN_item.nlargest(N, "neg_rate")
 
 # 将商店的评论信息保存到文件中
 review_data = pandas.DataFrame({
@@ -99,22 +102,10 @@ review_data = pandas.DataFrame({
     "pos_rate": shop_pos_rate,
     "neg_rate": shop_neg_rate
 })
-review_data.to_csv(r"./res/shop_rate.csv", index = False, encoding = "utf-8")
+pos_topN_shop = review_data.nlargest(N, "pos_rate")
+neg_topN_shop = review_data.nlargest(N, "neg_rate")
 
-pos_max_index = review_data["pos_rate"].argmax()     # 好评率最高商品
-pos_max_shop["name"] = review_data["name"][pos_max_index]
-pos_max_shop["rate"] = review_data["pos_rate"][pos_max_index]
-neg_max_index = review_data["neg_rate"].argmax()     # 差评率最高商品
-neg_max_shop["name"] = review_data["name"][neg_max_index]
-neg_max_shop["rate"] = review_data["neg_rate"][neg_max_index]
-
-# 好评率、差评率最高的相关信息
-review_info = {
-    "item_max_pos_review_rate": pos_max_item,
-    "item_max_neg_review_rate": neg_max_item,
-    "shop_max_pos_review_rate": pos_max_shop,
-    "shop_max_neg_review_rate": neg_max_shop,
-}
-review_profile = open(r"./res/review_profile.json", "w", encoding = "utf-8")
-json.dump(review_info, review_profile, indent = 4, ensure_ascii = False)
-review_profile.close()
+pos_topN_item.to_json(orient = "records", force_ascii = False, path_or_buf = "./res/pos_topN_item.json")
+neg_topN_item.to_json(orient = "records", force_ascii = False, path_or_buf = "./res/neg_topN_item.json")
+pos_topN_shop.to_json(orient = "records", force_ascii = False, path_or_buf = "./res/pos_topN_shop.json")
+neg_topN_shop.to_json(orient = "records", force_ascii = False, path_or_buf = "./res/neg_topN_shop.json")

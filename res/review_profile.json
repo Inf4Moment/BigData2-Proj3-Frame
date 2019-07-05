@@ -1,22 +1,2 @@
 {
-    "item_max_pos_review_rate": {
-        "rate": 1.0,
-        "item": "秋季纯棉男裤NIAN JEEP商务休闲裤男士厚款西裤宽松直筒长裤子潮",
-        "shop_id": "2103359059",
-        "shop_name": "能天服饰专营店"
-    },
-    "item_max_neg_review_rate": {
-        "rate": 1.0,
-        "item": "2017冬季男士加内胆冲锋夹克衫男NIAN JEEP多袋工装纯色两件套潮",
-        "shop_id": "2103359059",
-        "shop_name": "能天服饰专营店"
-    },
-    "shop_max_pos_review_rate": {
-        "rate": 1.0,
-        "name": "kabrita海外旗舰店"
-    },
-    "shop_max_neg_review_rate": {
-        "rate": 0.5384615384615384,
-        "name": "DJL海外专营店"
-    }
-}
+    "item_max_pos_review_rate": 
