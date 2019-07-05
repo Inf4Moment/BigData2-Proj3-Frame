@@ -4,8 +4,8 @@ import json
 import os
 import re
 
-attr_jump = re.compile(r'商品信息|材质|成分|弹力|年份季节|吊牌图|销售|厚薄|款式|版型|工艺处理|查看更多|风格|适用|面料|服饰工艺|安全等级|品牌|产地|净含量|产品|包装方式|条形码|形状|功效|保质期|生产企业|计价单位|口味|气味|规格|功能|量贩装|种类|闭合方式|货号|鞋帮高度')
-sub_jump = re.compile(r'优惠|购物')
+attr_jump = re.compile(r'商品信息|材质|成分|质地|弹力|填充|同款|(其他|是|否)|上市|年份|季节|裙长|吊牌图|销售|厚薄|款式|版型|领型|工艺处理|查看更多|风格|适用|面料|服饰工艺|安全等级|品牌|产地|净含量|产品|包装方式|条形码|形状|功效|保质期|生产企业|计价单位|口味|气味|规格|功能|量贩装|种类|闭合方式|货号|鞋帮高度')
+sub_jump = re.compile(r'优惠|购物|价格|领券|满减|活动')
 
 files = os.listdir(r"../data")
 for file_name in files:
@@ -25,7 +25,11 @@ for file_name in files:
         # 商品名称
         if 'name' in item:
             shop_info += '-------' + '\n'
-            shop_info += item['name'] + '\n'
+            shop_info += ' '.join(re.split(r'[\n,]', item['name'])) + '\n'
+        if 'sales' in item:
+            shop_info += item['sales'][4:-1] + '\n'
+        else:
+            shop_info += '0\n'
         if 'desc' in item:
             desc = item['desc']
             if 'subtitle' in desc and desc['subtitle'] != '\"—\"' \
@@ -43,9 +47,9 @@ for file_name in files:
                         if attr_jump.search(text) is None:
                             shop_info += text + '\n'
         shop_info += '=======' + '\n'
-        if 'reviewTags' in item:
-            for tag in item['reviewTags']:
-                shop_info += tag + '\n'
+        # if 'reviewTags' in item:
+        #     for tag in item['reviewTags']:
+        #         shop_info += tag + '\n'
         # if 'firstNReviews' in item:
         #     for review in item['firstNReviews']:
         #         if 'add' in review:
