@@ -359,6 +359,80 @@ clusters = analyzer_item.repeatedBisection(15, 12.0)
 
 ---
 
+### 9 -- 相似推荐
+
+我们尝试了两种思路。第一种是，对每件商品提取出其相关的描述，然后使用 doc2vec 算法这些描述映射为一个低维的数值向量，然后通过这些计算这些向量之间夹角的余弦值来推测商品之间的相似度。为此，我们调用了 python 中的 gensim 包，使用其 doc2vec 函数对商品描述文本进行训练。商品的描述文本为：商品名称、商品副标题以及商品标签。代码如下所示：
+
+```python
+import os
+import warnings
+warnings.filterwarnings(action='ignore', category=UserWarning, module='gensim')
+import gensim
+import gensim.models
+import numpy as np
+import jieba
+
+# 过滤 stop word
+# tokenizer = RegexpTokenizer(r'\w+')
+stop_words = [line.strip() for line in open(r"./src/stop_word_CN.txt", encoding='UTF-8').readlines()]
+
+# 输入输出准备
+dir = "./test_data"
+# dir = "./res/item_label"
+out_dir = "./res/model"
+if not os.path.exists(out_dir):
+    os.makedirs(out_dir)
+
+# 过滤规则
+def my_filter(str):
+    return (str not in stop_words and len(str) <= 21)
+
+# 迭代器，每次读入一个文本
+class MyDocs(object):
+    def __init__(self, dirname):
+        self.dirname = dirname
+    # 迭代器，一个文件一个商店，一行字符串一个商品
+    def __iter__(self):
+        for fname in os.listdir(self.dirname):
+            input_str = ""
+            for line in open(os.path.join(self.dirname, fname), encoding="utf-8"):
+                item_name = line[0:line.find("\t")]      # 商品名称
+                stemmed_tokens = [token for token in jieba.cut(line)]
+                tokens_without_stopword = list(filter(my_filter, stemmed_tokens))
+                yield tokens_without_stopword, fname + "--" + item_name
+
+docs = MyDocs(dir)
+
+# 转为 doc2vec 模型的输入
+class TaggedDoc(object):
+    def __init__(self, docs_iter):
+        self.docs_iter = docs_iter
+    # 迭代器
+    def __iter__(self):
+        for tokens_without_stopword, item_name in self.docs_iter:
+            # print(fname)
+            yield gensim.models.doc2vec.TaggedDocument(tokens_without_stopword, [jieba.cut(item_name)])
+
+taggedocs = TaggedDoc(docs)
+
+# 训练
+model = gensim.models.Doc2Vec(documents = taggedocs, workers = 8, size = 100, 
+        negative = 5, hs = 0, min_count = 2, sample = 0, iter = 20)
+model.save(os.path.join(out_dir, "my_model"))
+```
+
+这个方法直到训练的阶段都是没有问题的，但是到了查询每个商品的 topN 相似的时候，由于商品数量十分庞大，即使是在之前得到的各个类别之中寻求 topN 近似，也需要耗费十分长的时间。因此，我们尝试使用另一种思路来解决这个问题：首先根据之前得到的聚类，在各个类别中进行更进一步的聚类，并且确保聚类的粒度足够大 (也就是每个类别中的商品数量保持在较少的水平)。然后对于小型类别 (商品数量少于 1.5*N) 中的商品，我们直接将整个类中的商品，或者随机抽取出 N 个，作为该商品的 topN 相似推荐；至于较大型类别中的商品，则是利用 doc2vec 得到的向量表达在类中寻找最相似的 topN 商品。由于聚类部分的代码与前一部分相似，只是调整了类别参数，这里不再赘述。
+
+这部分题目我们没有完成可视化，只是简单地写了一个接受商品名称，返回其 topN 近似的查询函数。例如，"朝鲜进口长寿牌高丽参6年根红参 地字高丽人参60支600g整枝礼盒装" 的 topN 近似的一部分结果为：
+
+![sim_res](./img/sim_res.png)
+
+第二种方法比起第一种方法的查询效率高了不少，因为本来就没有必要对所有商品进行近似度的计算来求出 topN。只要上述聚类足够可靠，那么在小型类中查找近似是有效而且节省时间的。当然，由于部分聚类的不合理性，这种推荐方法的准确度可能是要比第一种方法稍微低一些的。
+
+
+
+---
+
 ### 10 -- 情感分析
 
 由于数据集中的评论并没有关于评论的标签 (好评、中评、差评)，所以我们也没有办法直接根据数据集进行训练。由于数据量比较大，进行人工标注也不太现实。所以我们直接使用 snownlp 中已经训练好的情感预测模型来对评论进行分析。这个模型预测的是一条语句为正面情感的概率，根据这个概率，我们将评论划分为：

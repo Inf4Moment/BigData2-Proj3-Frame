@@ -4,6 +4,7 @@ res/sales_info/
 res/item_rate/
 res/item_label/
 res/model/
+res/item_cluster_for_rec.json
 *.csv
 
 # class file
