@@ -19,6 +19,7 @@ key_count = {}
 files = os.listdir(r"../text")
 for file_name in files:
     file_path = r"../text/" + file_name
+    shop_id = file_name.split('.')[0]
     shop_sales = 0
     key_text = ''
     shop_text = ''
@@ -38,7 +39,7 @@ for file_name in files:
             key_text += item_text
             item_sales = int(item_text.split(',')[1])
             shop_sales += item_sales
-            item_set[item_text.split(',')[0]] = (item_text, item_sales)
+            item_set[item_text.split(',')[0]] = (item_text, item_sales, shop_id)
             analyzer_item.addDocument(item_text.split(',')[0], item_text)
             item_flag = False
         else:
@@ -52,7 +53,7 @@ for file_name in files:
     shop_name = key_text.split(',')[0]
     shop_text += shop_name + ','
 
-    print('Extracting\t' + file_name.split('.')[0] + '\tKeyword...')
+    print('Extracting\t' + shop_id + '\tKeyword...')
 
     filter_text = ''
     text_seg = HanLP.segment(key_text)
@@ -152,13 +153,13 @@ print('Clustering\tShops\tOK...')
 
 print('Clustering\tItems...')
 
-clusters = analyzer_item.repeatedBisection(15, 12.0)
+clusters = analyzer_item.repeatedBisection(6.0)
 cluster_list = []
 for cluster in clusters:
     py_cluster = []
     cluster_text = ''
     for item in cluster:
-        py_cluster.append((item, item_set[item][1]))
+        py_cluster.append((item, item_set[item][1], item_set[item][2]))
         cluster_text += item_set[item][0]
 
     filter_text = ''
@@ -172,6 +173,17 @@ for cluster in clusters:
     py_key_list = []
     py_key_list.extend(keyword_list)
 
+    # cluster_set = []
+    # for item in sorted(py_cluster, key=itemgetter(1), reverse=True):
+    #     cluster_set.append({
+    #         'name': item[0],
+    #         'shop_id': item[2],
+    #     })
+    # cluster_list.append({
+    #     'category': py_key_list,
+    #     'items': cluster_set,
+    # })
+
     cluster_set = []
     for item in sorted(py_cluster, key=itemgetter(1), reverse=True)[:10]:
         cluster_set.append({
@@ -183,7 +195,8 @@ for cluster in clusters:
         'items': cluster_set,
     })
 
-output_path = './res/item_cluster.json'
+# output_path = './res/item_cluster.json'
+output_path = './res/item_cluster_for_rec.json'
 out = open(output_path, 'w', encoding='utf-8')
 json.dump(cluster_list, out, indent=2, ensure_ascii=False)
 out.close()

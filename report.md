@@ -89,6 +89,276 @@ for file_name in files:
 
 ![shop_sales](./img/shop_sales.png)
 
+---
+
+
+
+### 2-7 -- 聚类与标签
+
+由于2-7个任务是连贯进行的，代码基本是在一个流程图里，并且顺序也和题目顺序不太一样。我们将按照我们的实现流程来梳理我们对着几个问题的解决过程。
+
+总的说来，这几个任务全是在解析`JSON`文本筛选并生成新的信息文本的前提下，对不同的任务采取不同的信息段拼接，提取关键词函数和文本聚类函数均是利用`Hanlp`库自带的函数实现的，根据结果来看，我们对数据信息的提取与甄别是非常到位的，效果比想象中的还要好不少。
+
+大致流程是：
+
+- 过滤`JSON`源文件，利用分隔符分段筛选信息，生成新的过滤文本。
+- 按照不同店铺文件逐行扫描整个过滤文本，将关键词文本、店铺聚类文本、商品聚类文本分为提取并将后两者存储在词典中。
+- 在每个店铺文件结尾，立即对这个店铺进行关键词提取，为了生成标签云，提取前100个关键词存入词典，同时将前五个关键词存在词典中，方便最后的统一输出，再将前十个关键词分为乘以5次添加到店铺聚类文本中，因为我们认为关键词非常有区分度，能够辅助后续任务的完成。
+- 由于我们在可视化过程中将每个店铺信息分别展示，因此这里在第一题得出的`JSON`数据下，将前五个关键词添加到末尾，作为新的显示文本。
+- 标签云则是根据每个店铺生成的前100个关键词累加之后，按照总次数由高到低排列，输出前100个关键词。
+- 店铺聚类与商品聚类非常类似，均是利用之前已经添加好的文本，直接调库函数进行聚类，反复尝试后，最终决定自己手动设定类别数量，之后再人工筛查，删除效果不好的类别，并根据关键词总结归纳类别的名称。
+
+#### 2-7.1  过滤文本
+
+这部分算是花功夫最多的部分，一开始我们将
+
+> 店铺名、商品名、副标题、商品信息、评论标签、评论精选内容
+
+全部纳入数据，但提取的关键词非常差，大多是`好`、`不错`这样的语气词，因此，我们认为评论部分并不能反映出一家店具体卖什么，或者类似的硬标签，评论只能分析出商品质量好坏、服务态度或者物流速度等软标签，因此我们决定将这部分内容删除。
+
+在进一步尝试后，发现不论怎么提取关键词，总会出现一些很普通的词语，比如`质量`、`材质`一类的词语，究其根源，是商品信息中不仅仅是有效内容，还混杂着大量的属性名称，因此，我们采取人工抽取源数据，手动添加过滤关键词去屏蔽这些属性名。在进一步测试后，出现在关键词或者聚类结果中，发现效果很差的店铺，我们又会返回寻找干扰词，好在总的类别不算多，几次修改后能够达到较好的效果。
+
+```python
+attr_jump = re.compile(r'商品信息|材质|成分|质地|弹力|填充|同款|(其他|是|否)|上市|年份|季节|裙长|吊牌图|销售|厚薄|款式|版型|领型|工艺处理|查看更多|风格|适用|面料|服饰工艺|安全等级|品牌|产地|净含量|产品|包装方式|条形码|形状|功效|保质期|生产企业|计价单位|口味|气味|规格|功能|量贩装|种类|闭合方式|货号|鞋帮高度')
+```
+
+另一方面，在商品副标题中，我们发现也不总是有用的附加信息，经常也会出现`优惠活动`、`全场满减`类似的广告信息，这也很大地干扰了结果的生成，于是我们也屏蔽了这些关键词出现的文本。
+
+```python
+sub_jump = re.compile(r'优惠|购物|价格|领券|满减|活动')
+```
+
+最后，我们将文本用三种分隔符分离，分别对应不同的信息截断。大致如下示意图
+
+```python
+shopName
+-------
+itemName
+sales
+(subtitle)
++++++++
+itemInformation
+=======
+```
+
+具体表示哪个信息段，后文再讲解。这里提取了商品销量的目的在于题目要求按照销量从高到低列出每个类的`top-N`商品或者店铺。这里会存在商品中不包含销量的情况，这时我们选择将销量设为0，便于后续的操作。
+
+```python
+        if 'sales' in item:
+            shop_info += item['sales'][4:-1] + '\n'
+        else:
+            shop_info += '0\n'
+```
+
+最后将新的文本还是按照不同店铺的`id`存为不同的文件，得到新的过滤文本。
+
+
+
+#### 2-7.2  提取基本文本
+
+这部分简单讲解我们利用三个分隔符提取的三个任务的不同文本。信息从小到大排列。
+
+- **店铺聚类**
+
+这是提取内容最少的问题，我们只选择了`+++++++`上面的内容，也就是店铺名、商品名，因为我们认为商品信息并不包含能够显著区分不同店铺的信息，这部分信息我们将会用前十关键词乘5来弥补，也就是说，我们认为关键词才是真正具有区分度的指标。
+
+```python
+        if '-------' in line:
+            item_text = ''
+            shop_text = ''
+            item_flag = True
+            shop_flag = True
+        elif '+++++++' in line:
+            item_text += shop_text
+            shop_flag = False
+```
+
+- **商品聚类**
+
+这是信息比较全的问题，除了店铺聚类的文本外，添加了商品信息，每个物品都会被纳入词典的一条数据中。这也是源于商品本身信息量不大，没有提取过的关键词，因此将商品信息纳入评测是非常合理的。
+
+```python
+    elif '=======' in line:
+        key_text += item_text
+        item_sales = int(item_text.split(',')[1])
+        shop_sales += item_sales
+        item_set[item_text.split(',')[0]] = (item_text, item_sales, shop_id)
+        analyzer_item.addDocument(item_text.split(',')[0], item_text)
+        item_flag = False
+```
+
+> 这里加入了`shop_id`，是为了配合第九题所需要的信息，会在最后一并输出到第九题目标`JSON`文件中。
+>
+> ```python
+> ClusterAnalyzer = SafeJClass('com.hankcs.hanlp.mining.cluster.ClusterAnalyzer')
+> ...
+> analyzer_item = ClusterAnalyzer()
+> ```
+>
+> 这是`Hanlp`做文本聚类的标准类，将每个单元文本用addDocument添加进去，前者是key，后者是value。
+
+
+
+#### 2-7.3  提取店铺关键词
+
+这部分是最早完成的代码，接下来的几个部分中，一旦涉及到提取关键词，均是按照这个模版进行的。
+
+- **分词**
+
+```python
+    text_seg = HanLP.segment(key_text)
+```
+
+- **去除停用词**
+
+```python
+CoreStopWordDictionary = SafeJClass("com.hankcs.hanlp.dictionary.stopword.CoreStopWordDictionary")
+...
+    CoreStopWordDictionary.apply(text_seg)
+```
+
+- **过滤词性**
+
+```python
+Nature = SafeJClass("com.hankcs.hanlp.corpus.tag.Nature")
+reserve_words_feature = [Nature.ns, Nature.n, Nature.vn, Nature.nr]
+...
+    for word in text_seg:
+        if word.nature in reserve_words_feature:
+            filter_text += word.word + '\n'
+```
+
+> 这里需要指出，我选择保留的四种词性为：名词、动名词、人名、地名。这是因为考虑到真正的店铺关键词基本出自这四种词性，比如动词、形容词就显得非常口语化，一般店铺都会把这样的词语转化为这四种词性。而这也是经过实践，发现在未筛选之前出现的干扰词对应的词性基本在这四种词性之外。
+
+- **提取关键词**
+
+```python
+    keyword_list = HanLP.extractKeyword(filter_text, 100)
+```
+
+- **更新标签云词频字典**
+
+```python
+    for key in keyword_list:
+        key_count[key] = key_count.setdefault(key, 0) + 1
+```
+
+- **存储每个店铺关键词**
+
+```python
+    py_key_list = []
+    py_key_list.extend(keyword_list)
+    key_set[shop_name] = py_key_list[:5]
+```
+
+> 这里需要提及，之所以看似多此一举用`py_key_list`再存储一遍，是因为返回的`keyword_list`是JAVA的数组，后续无法进行python的操作甚至`JSON`化，因此这里转化是非常有必要的。
+
+- **补充店铺聚类信息**
+
+```python
+    shop_text += ','.join(py_key_list[:9]*5)
+    shop_set[shop_name] = (shop_text, shop_sales)
+    analyzer_shop.addDocument(shop_name, shop_text)
+```
+
+> 这里如之前所说，前十关键词分别乘以5添加，这里存储`shop_sales`也是为了最后同一个类输出销量`top-N`所做准备。
+>
+> `analyzer_shop`是另一个聚类分析器，为了区分商品聚类分析器。
+
+
+
+#### 2-7.4  添加店铺关键词及标签云输出
+
+后续基本就是统一输出格式，大体上没有太多新的创新点。
+
+- **读取第一题数据并添加**
+
+```python
+with open(shop_sale_path, 'r', encoding='utf-8') as load_f:
+    shop_sale = json.load(load_f)
+    load_f.close()
+for item in shop_sale:
+    item['keyword'] = key_set.get(item['name'], [])
+
+out = open(shop_sale_path, 'w', encoding='utf-8')
+json.dump(shop_sale, out, indent=2, ensure_ascii=False)
+out.close()
+```
+
+> 之后类似输出会省略掉，只有文件路径和输出对象名称会有变化，但是基本参数都不会再有改变。
+
+- **前100标签输出**
+
+```python
+N = 100
+key_out = []
+for item in sorted(key_count.items(), key=itemgetter(1), reverse=True):
+    key_out.append({
+        'name': item[0],
+        'value': item[1],
+    })
+    N -= 1
+    if N == 0:
+        break
+```
+
+> 这里`name`就是标签，`value`指的是出现的词频。
+
+
+
+#### 2-7.5  店铺及商品聚类
+
+这部分也是一些常规的操作，在聚类之后，对每个类都再次提取了关键词，为了便于最后的人工筛选和归类。
+
+- **聚类库函数**
+
+```python
+clusters = analyzer_shop.repeatedBisection(9, 6.0)
+...
+clusters = analyzer_item.repeatedBisection(15, 12.0)
+```
+
+> 这是标准的文本聚类函数，第一个参数为聚类个数，第二个参数为二分信息增长阈值，哪个条件达到都会停止，实际上在测试过程中，我们发现，通过阈值增大的方式实在是过于缓慢，为了尽可能控制类别数量，我们最终还是人为制定了聚类个数。但是另一方面，通过阈值产生的聚类明显好于指定聚类个数，那样会更加细腻，也更加合理，但是类别数量不可控，实际产生了过多的类，导致认为筛选更名非常麻烦。最后这是一种折中的方法。
+
+- **每个类信息拼接**
+
+这里只以商品聚类为例
+
+```python
+    for item in cluster:
+        py_cluster.append((item, item_set[item][1], item_set[item][2]))
+        cluster_text += item_set[item][0]
+```
+
+> `item`是商品名称，`item_set[item][1]`是商品销量，`item_set[item][2]`是商品所在店铺id，这是为了第九题提供的信息。`item_set[item][0]`是店铺文本。
+
+- **提取每个类关键词**
+
+这部分与之前提取关键词完全相同，不再赘述。
+
+- **输出格式**
+
+这里只以商品聚类为例。
+
+```python
+    cluster_set = []
+    for item in sorted(py_cluster, key=itemgetter(1), reverse=True)[:10]:
+        cluster_set.append({
+            'name': item[0],
+            'sale': item[1],
+        })
+    cluster_list.append({
+        'category': py_key_list,
+        'items': cluster_set,
+    })
+```
+
+> 这是可视化部分所要求的格式，为了配合组员专门定制的输出模式。
+
+
+
+---
+
 ### 10 -- 情感分析
 
 由于数据集中的评论并没有关于评论的标签 (好评、中评、差评)，所以我们也没有办法直接根据数据集进行训练。由于数据量比较大，进行人工标注也不太现实。所以我们直接使用 snownlp 中已经训练好的情感预测模型来对评论进行分析。这个模型预测的是一条语句为正面情感的概率，根据这个概率，我们将评论划分为：
