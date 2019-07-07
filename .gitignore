@@ -2,6 +2,8 @@
 data/
 res/sales_info/
 res/item_rate/
+res/item_label/
+res/model/
 *.csv
 
 # class file

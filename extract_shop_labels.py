@@ -4,25 +4,25 @@ import json
 import os
 import re
 
-attr_jump = re.compile(r'å•†å“ä¿¡æ¯|æè´¨|æˆåˆ†|è´¨åœ°|å¼¹åŠ›|å¡«å……|åŒæ¬¾|(å…¶ä»–|æ˜¯|å¦)|ä¸Šå¸‚|å¹´ä»½|å­£èŠ‚|è£™é•¿|åŠç‰Œå›¾|é”€å”®|åšè–„|æ¬¾å¼|ç‰ˆå‹|é¢†å‹|å·¥è‰ºå¤„ç†|æŸ¥çœ‹æ›´å¤š|é£æ ¼|é€‚ç”¨|é¢æ–™|æœé¥°å·¥è‰º|å®‰å…¨ç­‰çº§|å“ç‰Œ|äº§åœ°|å‡€å«é‡|äº§å“|åŒ…è£…æ–¹å¼|æ¡å½¢ç |å½¢çŠ¶|åŠŸæ•ˆ|ä¿è´¨æœŸ|ç”Ÿäº§ä¼ä¸š|è®¡ä»·å•ä½|å£å‘³|æ°”å‘³|è§„æ ¼|åŠŸèƒ½|é‡è´©è£…|ç§ç±»|é—­åˆæ–¹å¼|è´§å·|é‹å¸®é«˜åº¦')
-sub_jump = re.compile(r'ä¼˜æƒ |è´­ç‰©|ä»·æ ¼|é¢†åˆ¸|æ»¡å‡|æ´»åŠ¨')
+attr_jump = re.compile(r'ÉÌÆ·ĞÅÏ¢|²ÄÖÊ|³É·Ö|ÖÊµØ|µ¯Á¦|Ìî³ä|Í¬¿î|(ÆäËû|ÊÇ|·ñ)|ÉÏÊĞ|Äê·İ|¼¾½Ú|È¹³¤|µõÅÆÍ¼|ÏúÊÛ|ºñ±¡|¿îÊ½|°æĞÍ|ÁìĞÍ|¹¤ÒÕ´¦Àí|²é¿´¸ü¶à|·ç¸ñ|ÊÊÓÃ|ÃæÁÏ|·şÊÎ¹¤ÒÕ|°²È«µÈ¼¶|Æ·ÅÆ|²úµØ|¾»º¬Á¿|²úÆ·|°ü×°·½Ê½|ÌõĞÎÂë|ĞÎ×´|¹¦Ğ§|±£ÖÊÆÚ|Éú²úÆóÒµ|¼Æ¼Ûµ¥Î»|¿ÚÎ¶|ÆøÎ¶|¹æ¸ñ|¹¦ÄÜ|Á¿··×°|ÖÖÀà|±ÕºÏ·½Ê½|»õºÅ|Ğ¬°ï¸ß¶È')
+sub_jump = re.compile(r'ÓÅ»İ|¹ºÎï|¼Û¸ñ|ÁìÈ¯|Âú¼õ|»î¶¯')
 
-files = os.listdir(r"../data")
+files = os.listdir(r"./data")
 for file_name in files:
-    file_path = r"../data/" + file_name
+    file_path = r"./data/" + file_name
     with open(file_path, "r", encoding="utf-8") as load_f:
         load_data = json.load(load_f)
-
+    # shop id
     shop_id = load_data["shopUserId"]
     print('Extracting\t' + shop_id + '...')
-
+    # shop name
     shop_info = ''
     if 'shopName' in load_data:
         shop_info += load_data['shopName'] + '\n'
     items = load_data["items"]
-
+    # collect info of items
     for item in items:
-        # å•†å“åç§°
+        # ÉÌÆ·Ãû³Æ
         if 'name' in item:
             shop_info += '-------' + '\n'
             shop_info += ' '.join(re.split(r'[\n,]', item['name'])) + '\n'
@@ -32,16 +32,16 @@ for file_name in files:
             shop_info += '0\n'
         if 'desc' in item:
             desc = item['desc']
-            if 'subtitle' in desc and desc['subtitle'] != '\"â€”\"' \
+            if 'subtitle' in desc and desc['subtitle'] != '\"¡ª\"' \
                     and sub_jump.search(desc['subtitle']) is None:
                 shop_info += desc['subtitle'] + '\n'
             shop_info += '+++++++' + '\n'
             for module in desc['modules']:
-                if module['title'] == 'å•†å“ä¿¡æ¯':
+                if module['title'] == 'ÉÌÆ·ĞÅÏ¢':
                     texts = module['texts']
-                    if texts[0] == 'å•†å“ä¿¡æ¯':
+                    if texts[0] == 'ÉÌÆ·ĞÅÏ¢':
                         del texts[0]
-                    if len(texts) != 0 and texts[-1] == 'æŸ¥çœ‹æ›´å¤š':
+                    if len(texts) != 0 and texts[-1] == '²é¿´¸ü¶à':
                         texts.pop()
                     for text in texts:
                         if attr_jump.search(text) is None:
@@ -55,10 +55,10 @@ for file_name in files:
         #         if 'add' in review:
         #             shop_info += '\n'.join(review['add'].split('\n')[1:]) + '\n'
         #         if 'content' in review:
-        #             if review['content'] != 'æ­¤ç”¨æˆ·æ²¡æœ‰å¡«å†™è¯„è®º!':
+        #             if review['content'] != '´ËÓÃ»§Ã»ÓĞÌîĞ´ÆÀÂÛ!':
         #                 shop_info += review['content'] + '\n'
-
-    output_path = r"../text/" + shop_id + ".txt"
+    # write
+    output_path = r"./res/text/" + shop_id + ".txt"
     out = open(output_path, 'w', encoding='utf-8')
     out.write(shop_info)
     out.close()

@@ -6,7 +6,7 @@ import re
 import pandas
 from snownlp import SnowNLP
 
-N = 5
+N = 20
 
 pos_max_item = pandas.DataFrame({       # 好评率最高的商品
     "name": [],
@@ -32,7 +32,7 @@ shop_id = [""] * file_num           # 商店 ID
 shop_pos_rate = [-1.0] * file_num   # 商店好评率
 shop_neg_rate = [-1.0] * file_num   # 商店差评率
 
-for k in range(0, 20):
+for k in range(0, 50):
     file_path = r"./data/" + files[k]
     with open(file_path, "r", encoding = "utf-8") as load_f:
         load_data = json.load(load_f)
